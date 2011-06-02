@@ -78,9 +78,6 @@ exports.hook_queue = function(next, connection) {
 		var db = doc['headers']['to'][0];
 	}
 	
-	connection.logdebug(doc);
-	connection.logdebug(db);
-	
   if (db) {
     var address = parseAddress(db)
       , db = this.couchURL + "/" + this.dbPrefix + address.user;
