@@ -94,9 +94,6 @@ exports.hook_queue = function(next, connection) {
   }
   
   var message = {uri: db, method: "POST", headers: headers, body: JSON.stringify(doc)};
-
-	connection.logdebug(message);
-
   request(message, function(err, resp, body) {
     if (!err && resp.statusCode === 404) {
       var body = JSON.parse(body);
