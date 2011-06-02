@@ -91,8 +91,11 @@ exports.hook_queue = function(next, connection) {
   }
   
   var message = {uri: db, method: "POST", headers: headers, body: JSON.stringify(doc)};
+
+	connection.logdebug(message);
+
   request(message, function(err, resp, body) {
-    if (resp.statusCode === 404) {
+    if (!err && resp.statusCode === 404) {
       var body = JSON.parse(body);
       if (body.error === "not_found" && body.reason === "no_db_file") {
         connection.logdebug(db + " does not exist... creating");
