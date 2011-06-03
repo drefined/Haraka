@@ -388,6 +388,25 @@ Connection.prototype.mail_respond = function(retval, msg) {
     }
 };
 
+Connection.prototype.rcpt_ok_respond = function (retval, msg) {
+    switch (retval) {
+        case constants.deny:
+                this.respond(550, msg || "delivery denied");
+                this.transaction.rcpt_to.pop();
+                break;
+        case constants.denydisconnect:
+                this.respond(550, msg || "delivery denied");
+                this.disconnect();
+                break;
+        case constants.denysoft:
+                this.respond(450, msg || "delivery denied for now");
+                this.transaction.rcpt_to.pop();
+                break;
+        default:
+                this.respond(250, msg || "recipient ok");
+    }
+}
+
 Connection.prototype.rcpt_respond = function(retval, msg) {
     
     if (retval === constants.cont && this.relaying) {
@@ -408,7 +427,7 @@ Connection.prototype.rcpt_respond = function(retval, msg) {
                 this.transaction.rcpt_to.pop();
                 break;
         case constants.ok:
-                this.respond(250, msg || "recipient ok");
+                plugins.run_hooks('rcpt_ok', this, this.transaction.rcpt_to[this.transaction.rcpt_to.length - 1]);
                 break;
         default:
                 if (retval !== constants.cont)
@@ -509,7 +528,7 @@ Connection.prototype.cmd_mail = function(line) {
 };
 
 Connection.prototype.cmd_rcpt = function(line) {
-    if (!this.transaction.mail_from) {
+    if (!this.transaction || !this.transaction.mail_from) {
         return this.respond(503, "Use MAIL before RCPT");
     }
     
@@ -572,6 +591,10 @@ Connection.prototype.received_line = function() {
 };
 
 Connection.prototype.cmd_data = function(line) {
+    if (!this.transaction) {
+        return this.respond(503, "MAIL required first");
+    }
+
     this.accumulate_data('Received: ' + this.received_line() + "\r\n");
     plugins.run_hooks('data', this);
 };
